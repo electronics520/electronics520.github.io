@@ -257,7 +257,6 @@ async function connectBLE() {
    //         }
   //      );
     //    loadBLE.style.display = "none",
-            mask.style.display = "block",
             loadImg.style.display = "block",
             loadModel();
     //} catch (err) {
@@ -271,7 +270,7 @@ $("#connBtn").click((e) => {
         console.log('你的瀏覽器不支援Web Bluetooth API，換一個吧～');
         return false;
     }
-    mask.style.display = "block",
+   // mask.style.display = "block",
     loadImg.style.display = "block",
     loadModel();
 });
