@@ -136,7 +136,7 @@ async function canRecognizeFaces(sta) {
 
         results.forEach((result, i) => {
             console.log(results[i]["label"])     // 顯示所有偵測到的名稱
-            //sendMsg(results[i]["label"] + ":" + results[i]["distance"])
+            sendMsg(results[i]["label"] + ":" + results[i]["distance"])
             const box = resizedDetections[i].detection.box
             const drawBox = new faceapi.draw.DrawBox(box, { label: result })
             drawBox.draw(canvas)
@@ -201,6 +201,7 @@ function getPosition(element) {
 }
 
 
+
 // 藍牙設定---------------------------------------------------
 const UART_SERVICE = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
@@ -210,25 +211,25 @@ var UARTService = null;
 
 // 連線藍牙
 async function connectBLE() {
-    //let opt = {
+    let opt = {
         // 會搜尋所有藍牙裝置
-       // acceptAllDevices: true,
-       // optionalServices: [UART_SERVICE]
+        acceptAllDevices: true,
+        optionalServices: [UART_SERVICE]
         // 限制搜尋到的藍牙裝置
         //filters: [
         //    { namePrefix: 'ESP32' },
         //    { services: [UART_SERVICE] }
         //],
-   // }
+    }
 
-   // try {
-       // console.log('請求BLE裝置連線…');
+    try {
+        console.log('請求BLE裝置連線…');
         // 連線藍牙裝置
-       // BLEDevice = await navigator.bluetooth.requestDevice(opt);
+        BLEDevice = await navigator.bluetooth.requestDevice(opt);
         mask.style.display = "block",
-           // loadImg.style.display = "none",
-           // loadBLE.style.display = "block",
-           // console.log('裝置名稱：' + BLEDevice.name);
+            loadImg.style.display = "none",
+            loadBLE.style.display = "block",
+            console.log('裝置名稱：' + BLEDevice.name);
         con.style.display = "none"        // 不顯連線按鈕
         connBtnImg.style.display = "none"
         inputtext.style.display = "none"
@@ -236,32 +237,33 @@ async function connectBLE() {
         conDev.style.display = "block";   // 顯示連線裝置
         //discon.style.display = "block";   // 顯示關閉連線按鈕
         idn.style.display = "block";      // 顯示辨識按鈕
-      //  $("#deviceName").text(BLEDevice.name);
+        $("#deviceName").text(BLEDevice.name);
 
-       // console.log('連接GATT伺服器…');
-      //  const server = await BLEDevice.gatt.connect();
+        console.log('連接GATT伺服器…');
+        const server = await BLEDevice.gatt.connect();
 
-     //   console.log('取得UART服務…');
-     //   UARTService = await server.getPrimaryService(UART_SERVICE);
+        console.log('取得UART服務…');
+        UARTService = await server.getPrimaryService(UART_SERVICE);
 
-    //    console.log('取得TX特徵…');
-    //    const txChar = await UARTService.getCharacteristic(TX_UUID);
+        console.log('取得TX特徵…');
+        const txChar = await UARTService.getCharacteristic(TX_UUID);
 
-     //   await txChar.startNotifications();
+        await txChar.startNotifications();
 
-     //   txChar.addEventListener('characteristicvaluechanged',
-       //     e => {
-     //           let val = e.target.value;
-    //            let str = new TextDecoder("utf-8").decode(val)
-    //            $('#magnet').text(str)
-   //         }
-  //      );
-    //    loadBLE.style.display = "none",
+        txChar.addEventListener('characteristicvaluechanged',
+            e => {
+                let val = e.target.value;
+                let str = new TextDecoder("utf-8").decode(val)
+                $('#magnet').text(str)
+            }
+        );
+        loadBLE.style.display = "none",
+            mask.style.display = "block",
             loadImg.style.display = "block",
             loadModel();
-    //} catch (err) {
-    //    console.log('出錯啦～' + err);
-   // }
+    } catch (err) {
+        console.log('出錯啦～' + err);
+    }
 }
 
 
@@ -270,11 +272,27 @@ $("#connBtn").click((e) => {
         console.log('你的瀏覽器不支援Web Bluetooth API，換一個吧～');
         return false;
     }
-   // mask.style.display = "block",
-    loadImg.style.display = "block",
-    loadModel();
+    connectBLE();
 });
 
 
+async function sendMsg(msg) {
+    if (!BLEDevice) {
+        return;
+    }
+    // 如果藍芽裝置有連接GATT伺服器
+    if (BLEDevice.gatt.connected) {
+        try {
+            const uartChar = await UARTService.getCharacteristic(RX_UUID);
+            let enc = new TextEncoder();
+            uartChar.writeValue(
+                enc.encode(msg),
+            )
+        } catch (err) {
+            console.log('出錯啦～' + err);
+        }
 
-
+    } else {
+        return;
+    }
+}
