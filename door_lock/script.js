@@ -272,7 +272,7 @@ $("#connBtn").click((e) => {
         console.log('你的瀏覽器不支援Web Bluetooth API，換一個吧～');
         return false;
     }
-    loadModel();
+    connectBLE();
 });
 
 
